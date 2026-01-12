@@ -184,4 +184,3 @@ AI 不得修改其他 worker 的状态文件，也不得在当前执行任务之
   - 不得重命名或移动 `tasks/queue.md`、`tasks/items/`、`tasks/workers/` 目录；
   - 不得在本 workflow 描述之外随意新增/删除任务队列行。
 
----
