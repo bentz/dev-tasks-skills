@@ -1,186 +1,249 @@
 # Workflow Specification
 
-本文件定义了在本仓库中使用 Cursor 处理任务队列时的行为规范。
+本文件定义了在任意项目中使用 `dev-task` skill 进行“任务化开发”时的行为规范。
 AI **默认不得修改本文件内容**；仅在**用户明确授权**时才允许修改。
 
 ---
 
-## 1. 相关文件约定
+## 0. 模式（simple / long）
 
-- 任务队列文件：`tasks/queue.md`
-  - 记录所有任务的索引信息（id、文件路径、状态、优先级、占用 worker 等）。
-  - 每一行代表一个任务，至少包含：
-    - id
-    - file（对应任务描述 md 的路径，例如 `tasks/items/001-useConversations.md`）
-    - status（pending / claimed / in-progress / done / blocked）
-    - priority（high / medium / low）
-    - worker（当前占用该任务的 worker-id，可为空）
+- `simple`：依然使用 `tasks/` 做可审计记录，但不引入“调度器（scheduler）”角色；默认单 agent 串行推进。
+- `long`：引入调度器（scheduler），允许并行 agent 执行；支持重启恢复；可选启用 “Doctor（健康检查）”。
 
-- 任务描述文件：`tasks/items/{id}.md`（后续统称为 {任务描述md}）
-  - 保存单个任务的详细信息：Meta / Description / Files / Commands / Acceptance / Notes。
-  - 由人类维护为主，AI 仅允许：
-    - 更新 `Meta` 中的 `status` 字段；
-    - 在 `Notes` 区域末尾追加简短的完成/阻塞/补充/变更记录；
-    - 允许在 `Notes` 下新增小节（如“补充/变更记录”）。
+> 说明：无论 simple/long，项目内都应存在 `tasks/` 目录与核心文件；`long` 只是增加“调度”与“恢复/并行”能力。
 
-- Worker 状态文件：`tasks/workers/worker-1.md`、`tasks/workers/worker-2.md`、`tasks/workers/worker-3.md`
-  - 每个文件代表一个 worker 的执行状态（可理解为一个“并行执行槽位”）。
-  - 包含 Meta / Current Task / Plan / Progress Log / Result 等区域。
-  - AI 只允许修改当前 worker 对应的状态文件，不得改动其他 worker 的文件。
+## 1. 相关文件约定（全部位于项目仓库的 `tasks/` 下）
 
----
+- 任务计划板：`tasks/todos.md`
+  - 用于记录“有哪些任务、当前状态、由哪个 agent 认领”。
+  - **格式必须固定**：推荐使用一个 `yaml` code block 存放结构化数据（不要用 Markdown table）。
+  - 推荐 YAML 结构：
+    - `updated_at`：更新时间
+    - `mode`：`simple | long`
+    - `archives`：归档指针（可选）
+    - `tasks`：任务数组
+  - 最小示例（可直接复制；完整模板见 `references/todos-template.md`，非必读）：
 
-## 2. Worker 身份与任务选择策略
+```yaml
+updated_at: "2026-01-30 10:00"
+mode: long # simple | long
+archives: []
+tasks:
+  - id: 001-TASK
+    title: "..."
+    status: doing # todo | doing | blocked | done
+    claimed_by: agent-1
+    task_file: tasks/items/001-TASK.md
+    log_file: tasks/logs/tasks/001-TASK.md
+    updated_at: "2026-01-30 10:00"
+```
+  - 字段建议包含：
+    - `status`：`todo | doing | blocked | done`
+    - `claimed_by`：agent id；未认领可为空
+    - `task_file`：例如 `tasks/items/001-TASK.md`
+    - `log_file`：例如 `tasks/logs/tasks/001-TASK.md`
+    - `updated_at`：建议 `"YYYY-MM-DD HH:mm"`（本地时间字符串）
+  - **调度真相来源（SSoT）**：`tasks/todos.md` 作为调度与分配的唯一真相；任务文件中的 `Meta.status/claimed_by` 仅作为镜像反查。
 
-### 2.1 Worker 身份
+- 任务文件：`tasks/items/{id}.md`（后续统称为 {任务文件md}）
+  - 一个文件承载：规划（Plan）/ 约束（Constraints）/ 验收（Acceptance）/ 已做内容（Notes/Progress）/ 结果（Result）。
+  - 任务文件必须包含 `Meta.status`（与 `tasks/todos.md` 镜像，用于反查）。
+  - 任务文件可以包含 `Meta.claimed_by`（镜像反查用；以 `tasks/todos.md` 为准）。
+  - 任务文件不应作为“调度面板”使用：避免在任务文件里维护额外的队列/分配状态。
 
-- 本仓库最多同时开启 3 个并行 worker，对应状态文件：
-  - `worker-1` → `tasks/workers/worker-1.md`
-  - `worker-2` → `tasks/workers/worker-2.md`
-  - `worker-3` → `tasks/workers/worker-3.md`
-- 人类会在对话中通过自然语言明确指定当前 worker，例如：
-  - “你现在是 worker-1，请按 workflow 执行任务”
-- 如果不指定worker，则从当前可用的worker中选则一个进行，并回复到对话中，如：“我现在是worker-1，现在开始执行”
-- AI 必须：
-  - 将当前 worker-id 视为固定值（如 `worker-1`），只操作对应的 worker 状态文件；
-  - 不得修改其他 worker 的状态文件
-  - 如当前worker都被占用，则回复到对话中，如：“当前无可用worker，请确认”，并终止执行。
+- 项目信息与索引：`tasks/info.md`
+  - 用于沉淀项目级“稳定事实/约束/常用入口/已知坑”等，并维护最简索引（YAML 风格，不用 table）。
+  - 可在其中声明非默认的 memory-policy（见下文）。
+  - 推荐 YAML 结构：
+    - `updated_at`
+    - `index`
+    - `facts`（可选）
+    - `memory_policy_override`（可选）
+  - 最小示例（完整模板见 `references/info-template.md`，非必读）：
 
-### 2.2 任务选择策略（单 worker 视角）
+```yaml
+updated_at: "2026-01-30 10:00"
+memory_policy_override:
+  max_lines:
+    todos: 200
+    info: 200
+index:
+  - id: 001-TASK
+    title: "..."
+    status: doing
+    task_file: tasks/items/001-TASK.md
+    log_file: tasks/logs/tasks/001-TASK.md
+facts:
+  - "..."
+```
 
-当 AI 收到“按工作流执行一个任务”的指令时，应按以下顺序处理：
+- 日志目录：`tasks/logs/`
+  - 调度器日志：`tasks/logs/scheduler.md`（仅 long 模式强制；simple 模式可选）
+  - 任务执行日志：`tasks/logs/tasks/{id}.md`（执行期间必须存在；记录命令与关键信息摘要）
+  - 最小示例（完整模板见 `references/scheduler-log-template.md` / `references/task-log-template.md`，非必读）：
 
-1. 读取当前 worker 的状态文件（例如 `tasks/workers/worker-1.md`）：
-   - 如果其中 `Current Task.status` 为 `in-progress` 或 `claimed`：
-     - 优先继续当前任务；
-     - 不从队列中选择新任务。
-2. 如果当前 worker 没有进行中的任务：
-   - 读取 `tasks/queue.md`；
-   - 从中选择一条适合当前 worker 执行的任务，规则：
-     - `status = pending`；
-     - `worker` 字段为空（表示尚未被其他 worker 占用）；
-     - `priority` 越高优先级越高（high > medium > low）；
-     - 多个任务满足条件时，选择队列中靠前的一条。
-3. 对选中的任务进行 **认领（claim）**：
-   - 将 `tasks/queue.md` 中该任务一行的：
-     - `status` 改为 `claimed`；
-     - `worker` 改为当前 worker-id（例如 `worker-1`）。
-   - 将当前任务信息写入对应的 worker 状态文件。
+```md
+# Scheduler Log
+- 2026-01-30 10:00: mode=long
+```
 
-**禁止行为：**
-
-- 不得认领已经 `status != pending` 的任务；
-- 不得将当前 worker-id 写入与本次任务无关的队列行；
-- 不得改动其他任务的 id / file / title 等静态字段。
-
----
-
-## 3. 工作循环（单任务执行流程）
-
-当一个任务已经被当前 worker 认领（queue 中为 `claimed`，worker 为当前 worker-id）后，AI 必须按照以下流程执行：
-
-1. **更新当前 worker 状态文件**
-   - 在 `Meta` 中：
-     - `mode` 设为 `working`
-     - 更新 `last_updated` 为当前时间（UTC 或本地时间字符串均可）
-   - 在 `Current Task` 中：
-     - 填写 `id`、`title`、`file`、`status`（设为 `in-progress`）
-     - 可选填写任务在 queue 中的位置说明（如 `queue_row_hint`）
-
-2. **生成执行计划**
-   - 读取对应的 {任务描述md}：
-     - 解析 `Description` / `Files` / `Commands` / `Acceptance` 等内容；
-   - 在当前 worker 状态文件的 `Plan` 区域写出 3–7 个具体步骤：
-     - 每步尽量说明要修改的文件、模块、函数或组件；
-     - 步骤应可以被顺序执行。
-
-3. **标记任务为 in-progress**
-   - 将 `tasks/queue.md` 中该任务行的 `status` 从 `claimed` 改为 `in-progress`；
-   - 保持 `worker` 字段为当前 worker-id 不变。
-
-4. **按计划修改代码**
-   - 仅在 {任务描述md} 的 `Files` 部分列出的文件，以及与其强相关的文件中修改代码；
-   - 如需修改额外文件，须在 `Plan` 或 `Progress Log` 中说明原因。
-
-5. **运行命令**
-   - 根据 {任务描述md} 的 `Commands` 列表，依次运行命令（例如 `pnpm test xxx`、`pnpm lint`）；
-   - 在当前 worker 状态文件的 `Progress Log` 和 `Result` 区域记录每条命令及通过/失败情况；
-   - 不得运行未在 `Commands` 中声明的其他命令；
-   - 允许重复执行已声明命令；允许为已声明命令附加参数（例如 `--reporter dot`），但必须记录到 `Progress Log`。
-
-6. **验收与状态更新**
-   - 若所有命令执行成功，且自检认为满足 `Acceptance` 条款：
-     - 将 `tasks/queue.md` 中该任务的 `status` 改为 `done`，并删除当前行；
-     - 在 {任务描述md} 的 `Meta.status` 中改为 `done`（如存在该字段）；
-     - 在 {任务描述md} 的 `Notes` 区域末尾追加一条“完成说明”；
-     - 在当前 worker 状态文件中：
-       - `Current Task.status` 设为 `completed`；
-       - 在 `Result` 区域写出本次任务的总结；
-       - `Meta.mode` 设为 `waiting-review`。
-   - 若命令失败或 AI 无法判断是否满足验收条件：
-     - 将 `tasks/queue.md` 中该任务的 `status` 改为 `blocked`；
-     - 在 {任务描述md} 的 `Meta.status` 中改为 `blocked`（如存在该字段）；
-     - 在 {任务描述md} 的 `Notes` 区域末尾追加一条“阻塞原因说明”；
-     - 在当前 worker 状态文件中：
-       - `Current Task.status` 设为 `blocked`；
-       - 在 `Result` 区域详细记录失败原因 / 日志摘要 / 建议的下一步；
-       - `Meta.mode` 设为 `waiting-review`。
-
-7. **结束本次执行**
-   - 完成上述更新后，停止执行，不得自动开始下一个任务；
-   - 等待人类 review 或再次指令继续。
+```md
+# Task Log: 001-TASK
+- 2026-01-30 10:00: Started
+- 2026-01-30 10:05: Ran `...`
+```
 
 ---
 
-## 4. Worker 状态文件的编辑规则
+## 2. 角色与职责（scheduler / planner / executor）
 
-以任一 worker 状态文件（例如 `tasks/workers/worker-1.md`）为例，AI 仅允许如下修改：
+### 2.1 scheduler（调度器，long 模式启用）
 
-- `Meta` 区域：
-  - 允许修改：
-    - `mode`
-    - `last_updated`
-  - 不得修改：
-    - `worker_id`、文件标题等固定标识信息。
+- 负责：任务拆分与编排、认领与分配、并行冲突处理、blocked 解除路径、重启恢复。
+- 负责维护的一致性：
+  - `tasks/todos.md` 的条目与 `tasks/items/{id}.md` 的 `Meta.status` 同步（镜像反查）。
+  - `tasks/todos.md` 的 `claimed_by` 与实际执行者一致（使用 agent id）。
+- 写入范围：
+  - 允许修改：`tasks/todos.md`、`tasks/info.md`
+  - 允许追加：`tasks/logs/scheduler.md`、`tasks/logs/tasks/{id}.md`
+  - 允许更新：`tasks/items/{id}.md` 的 `Meta.status` / `Meta.claimed_by`（仅镜像字段）
+  - 不应修改：{任务文件md} 的 `Plan/Constraints/Acceptance/Files`（这些由 planner 负责）
 
-- `Current Task` 区域：
-  - 允许修改：
-    - `id`
-    - `title`
-    - `status`
-    - `file`
-    - `queue_row_hint`（如存在）
-  - 不得删除整个区域或改为其他含义。
+#### agent id 规则（claimed_by）
 
-- `Plan` 区域：
-  - 每次执行任务时可以整体覆盖重写；
-  - 计划应对应当前 `Current Task.id`。
+- 优先使用系统提供的稳定 id（如对话上下文里可获得）。
+- 如果无法获得稳定 id，由 scheduler 分配：`agent-1`、`agent-2`、`agent-3`… 并在 `tasks/logs/scheduler.md` 记录映射（便于重启恢复与反查）。
 
-- `Progress Log` 区域：
-  - 仅允许在末尾追加新条目；
-  - 不得删除或修改历史记录。
+### 2.2 planner（规划器）
 
-- `Result` 区域：
-  - 允许追加新的结果小节；
-  - 不要求保留历史结果的唯一性，但不得删除已有结果。
+- 负责：在 {任务文件md} 内产出“可执行计划”与“约束/验收”。
+- 输出必须尽量具体（文件/模块/关键函数/边界/测试点），并能被 executor 顺序执行。
+- 写入范围（建议）：
+  - 允许修改：{任务文件md} 的 `Plan/Constraints/Acceptance/Files`
+  - 允许更新：{任务文件md} 的 `Meta`（除 status/claimed_by 这类镜像字段外，需与 scheduler 协调）
+  - 不建议直接改：`tasks/todos.md`
 
-AI 不得修改其他 worker 的状态文件，也不得在当前执行任务之外的状态文件中写入任何内容。
+### 2.3 executor（执行器，可并行）
+
+- 负责：按 {任务文件md} 的计划实现、验证、回填结果。
+- 写入范围（建议）：
+  - 允许追加：`tasks/logs/tasks/{id}.md`（命令、输出摘要、失败原因）
+  - 允许追加：{任务文件md} 的 `Notes/Progress/Result`（已做内容与结论）
+  - 不建议在 long 模式直接改 `tasks/todos.md`（避免并发冲突）；由 scheduler 统一更新状态
+  - 不建议在执行阶段重写 `Plan/Constraints`；如需调整先与 scheduler/planner 对齐，再变更并记录原因
+
+> 注：simple 模式下同一个 agent 可以同时扮演 planner+executor（并承担最小化的调度工作）。
 
 ---
 
-## 5. 安全与范围限制
+## 3. 工作循环（单任务生命周期）
+
+### 3.1 创建任务（Create）
+
+1. 创建 `tasks/items/{id}.md`（参考 `references/000-task-example.md`）
+2. 创建 `tasks/logs/tasks/{id}.md`（参考 `references/task-log-template.md`）
+3. 在 `tasks/todos.md` 中新增条目（参考 `references/todos-template.md`）：
+   - `status: todo`
+   - `claimed_by: ""`
+   - `task_file`、`log_file`、`updated_at`
+4. 请求用户确认任务内容；用户确认后才进入执行。
+
+### 3.2 认领任务（Claim）
+
+- long 模式：由 scheduler 执行
+  - 在 `tasks/todos.md` 中写入 `claimed_by: <agent-id>`，并将 `status` 切到 `doing`
+  - 同步更新 {任务文件md} 的 `Meta.status: doing`
+  - 在 `tasks/logs/scheduler.md` 追加“认领记录”
+
+- simple 模式：当前 agent 自行认领并更新上述文件。
+
+### 3.3 执行与记录（Execute）
+
+- executor 按计划修改代码；执行中必须记录：
+  - 在 `tasks/logs/tasks/{id}.md` 追加：
+    - 时间戳
+    - 运行的命令（如有）
+    - 关键输出摘要/错误摘要
+    - 自检结论/下一步
+  - 在 {任务文件md} 追加“Progress/Notes/Result”：
+    - 已做内容（高层摘要）
+    - 关键决策与约束变化（如有）
+
+### 3.4 完成或阻塞（Close）
+
+- 完成（done）条件：
+  - 通过自检认为满足 `Acceptance`
+  - 任务文件与日志均已补齐（Result/验证方式/已知风险）
+- 阻塞（blocked）条件：
+  - 无法继续推进，或需要用户输入/外部资源/权限
+
+更新要求（建议由 scheduler 执行，避免并发冲突）：
+- `tasks/todos.md`：更新 `status: done|blocked`、`updated_at`
+- {任务文件md}：同步更新 `Meta.status`，并在 `Notes` 末尾追加完成/阻塞原因
+- `tasks/logs/tasks/{id}.md`：追加最终摘要与建议下一步（blocked 必须包含“如何解除阻塞”）
+
+---
+
+## 4. 编辑与并发规则（避免“状态漂移”）
+
+- `tasks/todos.md` 是调度视图；{任务文件md} 是任务视图；两者都包含 `status` 用于反查。
+- long 模式建议：
+  - 只有 scheduler 负责更新 `tasks/todos.md` 与 {任务文件md}.`Meta.status`
+  - executor 只追加日志与结果，不直接改“官方状态”
+- simple 模式：
+  - 当前 agent 作为“最小化 scheduler”，允许直接更新两边，但必须保持同步。
+
+### 4.1 状态机（必须遵守）
+
+- 允许的状态值：`todo | doing | blocked | done`
+- 允许的状态迁移：
+  - `todo → doing`
+  - `doing → blocked | done`
+  - `blocked → doing`
+- 不变量（Doctor 必查）：
+  - `status: doing` ⇒ `claimed_by` 必须非空
+  - `status: todo` ⇒ `claimed_by` 应为空（推荐）
+
+### 4.2 冲突处理（todos vs Meta）
+
+- 若 `tasks/todos.md` 与 {任务文件md}.`Meta.status/claimed_by` 不一致：
+  - Doctor 需要报告不一致；
+  - 修复时以 `tasks/todos.md` 为准，同步更新任务文件的 `Meta.*`；
+  - 自动修复前必须征询用户确认，并在 `tasks/logs/scheduler.md` 记录“修复前/修复后摘要”。
+
+---
+
+## 5. Doctor（健康检查，仅 long 模式启用）
+
+在 long 模式启动或重启恢复时，scheduler 应先做一次只读检查，并把发现的问题写入 `tasks/logs/scheduler.md`：
+- `tasks/todos.md` 与 `tasks/items/*.md` 的 `Meta.status` 是否一致
+- 是否存在 `claimed_by` 但长时间无更新的任务（可能卡死）
+- 是否存在 `doing` 但缺少 `tasks/logs/tasks/{id}.md` 的任务
+- 标题/描述/验收是否互相矛盾（会导致 executor 误解）
+- 是否存在 `doing` 但 `claimed_by` 为空（违反状态机不变量）
+
+> Doctor 默认只报告；如需自动修复（例如同步 status），应先征询用户确认。
+
+---
+
+## 6. 安全与范围限制
 
 - 命令执行：
-  - 仅允许运行 {任务描述md} 的 `Commands` 中明确列出的命令；
-  - 不得发明新的 shell 命令；
-  - 不得执行可能删除文件、修改 git 历史或访问远程网络的命令（例如 `rm -rf`、`git reset --hard` 等）。
+  - 不再要求“仅运行声明过的命令”，但**必须**把实际运行的命令记录到 `tasks/logs/tasks/{id}.md`。
+  - 任何明显破坏性命令（例如 `rm -rf`、`git reset --hard`）必须先征询用户确认。
 
 - 代码范围：
-  - 优先修改 {任务描述md} 中 `Files` 列出文件；
-  - 如需修改其他文件，必须在 `Plan` 或 `Progress Log` 中说明原因；
-  - 禁止对 `.env*`、CI/CD 配置、生产部署相关脚本进行任何修改。
+  - 优先修改 {任务文件md} 中 `Files` 列出文件；
+  - 如需修改其他文件，必须在任务日志中说明原因；
+  - 除非用户明确要求，避免对 `.env*`、CI/CD、部署脚本做改动。
 
 - 文件结构：
-  - 不得重命名或移动 `tasks/queue.md`、`tasks/items/`、`tasks/workers/` 目录；
-  - 不得在本 workflow 描述之外随意新增/删除任务队列行。
+  - 不得重命名或移动 `tasks/todos.md`、`tasks/items/`、`tasks/info.md`、`tasks/logs/`。
 
+---
+
+## 7. Memory Policy（默认策略在 skill 内，可在项目中覆盖）
+
+- 默认策略见：`references/memory-policy.md`
+- 项目覆盖方式：在 `tasks/info.md` 的 YAML block 中增加 `memory_policy_override`（参考：`references/info-template.md`）
+- scheduler 应优先读取 override；无 override 则使用默认策略。

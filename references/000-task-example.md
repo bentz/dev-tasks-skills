@@ -4,10 +4,12 @@
 
 ## Meta
 
-- id: IM-XXX
-- status: pending
+- id: 001-TASK
+- status: todo # todo | doing | blocked | done（与 tasks/todos.md 镜像，用于反查）
 - priority: medium
 - module: node/main/xxx
+- claimed_by: "" # 可选：agent id（反查用；以 tasks/todos.md 为准）
+- log_file: tasks/logs/tasks/001-TASK.md
 
 ## Description
 
@@ -17,15 +19,19 @@
 - 非范围：明确不做的内容
 - 约束/风险：版本、兼容性、性能、边界
 
+## Constraints
+
+- （可选：把关键约束单独列出来，执行中如有变更需记录原因）
+
+## Plan
+
+- 1) （写清楚要改哪些文件/模块/函数）
+- 2) （写清楚边界与验证方式）
+
 ## Files
 
 - path/to/file-a.ts
 - path/to/file-b.ts
-
-## Commands
-
-- pnpm lint
-- pnpm test:node -- tests/node/main/xxx.test.ts
 
 ## Acceptance
 
@@ -36,3 +42,7 @@
 ## Notes
 
 - 2026-01-12: 任务创建，待确认。
+
+## Result
+
+- （完成/阻塞时填写：做了什么、结论、如何验证、已知风险/下一步）
