@@ -1,35 +1,39 @@
-# `tasks/todos.md` 模板（YAML in Markdown）
+# `tasks/todos.json` 模板（JSON）
 
-推荐将 `tasks/todos.md` 作为一个“可读的 Markdown 文件 + 一个稳定的 YAML 数据块”。
+`tasks/todos.json` 是任务调度的 SSoT（唯一真相来源）。
 
-- 不要使用 Markdown table
-- 字段名保持固定（便于多 agent 协作与 Doctor 检查）
-- `status` 必须为：`todo | doing | blocked | done`
+最小示例：
 
-示例：
-
-```yaml
-updated_at: "2026-01-30 10:00"
-mode: simple # simple | long
-
-archives: [] # 可选：归档指针（见 references/memory-policy.md）
-
-tasks:
-  - id: 001-TASK
-    title: "实现登录页 i18n"
-    status: doing
-    priority: high # high | medium | low（可选）
-    claimed_by: agent-1 # agent id；未认领用空字符串
-    task_file: tasks/items/001-TASK.md
-    log_file: tasks/logs/tasks/001-TASK.md
-    updated_at: "2026-01-30 10:00"
-
-  - id: 002-TASK
-    title: "补齐单测覆盖"
-    status: todo
-    priority: medium
-    claimed_by: ""
-    task_file: tasks/items/002-TASK.md
-    log_file: tasks/logs/tasks/002-TASK.md
-    updated_at: "2026-01-30 10:00"
+```json
+{
+  "updated_at": "2026-02-01 10:00:00",
+  "tasks": [
+    {
+      "id": "001-TASK",
+      "title": "实现登录页 i18n",
+      "status": "doing",
+      "priority": "high",
+      "claimed_by": "exec-001-TASK",
+      "task_file": "tasks/items/001-TASK.md",
+      "log_file": "tasks/logs/tasks/001-TASK.log",
+      "updated_at": "2026-02-01 10:00:00"
+    },
+    {
+      "id": "002-TASK",
+      "title": "补齐单测覆盖",
+      "status": "todo",
+      "priority": "medium",
+      "claimed_by": "",
+      "task_file": "tasks/items/002-TASK.md",
+      "log_file": "tasks/logs/tasks/002-TASK.log",
+      "updated_at": "2026-02-01 10:00:00"
+    }
+  ]
+}
 ```
+
+字段约定：
+- `status`: `todo | doing | blocked | done`
+- `claimed_by`: 可为空字符串
+- `task_file` / `log_file`: 项目内相对路径
+- `updated_at`: 本地时间字符串 `YYYY-MM-DD HH:mm:ss`

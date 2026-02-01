@@ -5,11 +5,11 @@
 ## Meta
 
 - id: 001-TASK
-- status: todo # todo | doing | blocked | done（与 tasks/todos.md 镜像，用于反查）
+- status: todo # todo | doing | blocked | done（与 tasks/todos.json 镜像，用于反查）
 - priority: medium
 - module: node/main/xxx
-- claimed_by: "" # 可选：agent id（反查用；以 tasks/todos.md 为准）
-- log_file: tasks/logs/tasks/001-TASK.md
+- claimed_by: "" # 可选：agent id（反查用；以 tasks/todos.json 为准）
+- log_file: tasks/logs/tasks/001-TASK.log
 
 ## Description
 
