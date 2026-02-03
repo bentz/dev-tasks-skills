@@ -29,7 +29,7 @@
 
 - 保留：
   - `status != done` 的任务（todo/doing/blocked）
-  - 最近完成的少量任务（默认 10 条）
+- 最近完成的少量任务（默认 20 条）
 - 迁移：
 - 其余 `done` 任务移动到 `tasks/archive/todos/archive-{task_name}-todos-YYYYMM.json`
 
