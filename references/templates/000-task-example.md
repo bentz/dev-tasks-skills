@@ -1,6 +1,7 @@
 # 任务模板示例
 
 > 用于创建 `tasks/items/{id}.md` 的参考结构。按需删改字段即可。
+> Plan 阶段对话仅输出简化方案，本模板用于“创建/落盘”后的详细计划文件。
 
 ## Meta
 
@@ -30,8 +31,9 @@
 
 ## Files
 
-- path/to/file-a.ts
-- path/to/file-b.ts
+- （可选：可能涉及的目录范围，非硬约束）
+- path/to/dir-a/
+- path/to/dir-b/
 
 ## Acceptance
 

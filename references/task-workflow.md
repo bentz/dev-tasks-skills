@@ -1,6 +1,6 @@
 # Runner Workflow
 
-本文件定义在项目中使用 `dev-task` skill 进行任务化开发时的行为规范。
+本文件定义执行阶段（Runner）任务化开发规范。
 AI 默认不得修改本文件内容；仅在用户明确授权时才允许修改。
 
 ---
@@ -20,7 +20,7 @@ AI 默认不得修改本文件内容；仅在用户明确授权时才允许修�
     - `updated_at`
 
 - 任务文件：`tasks/items/{id}.md`
-  - 包含 Plan / Constraints / Acceptance / Notes / Result
+  - 包含 Plan/Constraints/Files/Acceptance/Notes/Result
   - `Meta.status` 与 `tasks/todos.json` 镜像，仅用于反查
   - `Meta.claimed_by` 可选镜像字段
 
@@ -30,13 +30,24 @@ AI 默认不得修改本文件内容；仅在用户明确授权时才允许修�
 
 ---
 
-## 2. 运行方式（runner）
+## 2. 运行方式（执行阶段）
 
-触发条件：指定任务 id 或任务文件路径。
+触发条件：指定任务 id/任务文件路径。
 
-- 按 Plan 执行并记录日志
+前置条件（必须满足）：
+- 执行前必须读取 `tasks/items/{id}.md`，且至少包含 Plan / Acceptance；缺失则返回 Plan 阶段补齐，不得执行（Files 为可选）
+
+执行原则：
+- 严格按 Plan / Acceptance 执行并记录日志；Files 仅作为目录范围参考，非硬约束
 - 允许直接更新 `tasks/todos.json` 的当前任务 `status/updated_at`
 - 回填 `tasks/items/{id}.md` 的 Result/Notes
+
+### 2.1 对话输出（执行阶段）
+- 执行摘要：做了什么（1-3 条）
+- 结果状态：`done` / `blocked`
+- 验证方式：如何验证（或为何无法验证）
+- 关键变更：涉及的关键文件
+- 若阻塞：阻塞原因 + 需要用户提供的内容
 
 ---
 
@@ -74,3 +85,22 @@ AI 默认不得修改本文件内容；仅在用户明确授权时才允许修�
 
 - 任何破坏性命令（如 `rm -rf`、`git reset --hard`）必须先征询用户确认
 - 变更范围优先遵循 `Files` 列表，超出必须在日志说明原因
+
+---
+
+## 6. 验收底线（简版）
+
+- 行为符合需求（含关键边界）
+- 不引入新的 TypeScript / ESLint error
+- 任务文件补齐“如何验证”
+
+---
+
+## 7. 错误处理（最小版）
+
+- `error_type`: `TRANSIENT | PERMISSION | REQUIREMENT | ENVIRONMENT`
+- `TRANSIENT` → `blocked`，提示可手动重试
+- `PERMISSION` → `blocked`，说明需用户确认/授权
+- `REQUIREMENT` → 返回 Plan 阶段澄清
+- `ENVIRONMENT` → `blocked`，给出修复指引
+- 失败时在对话与任务日志记录 `error_type`、摘要与建议动作
