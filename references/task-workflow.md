@@ -25,8 +25,8 @@ AI 默认不得修改本文件内容；仅在用户明确授权时才允许修�
   - `Meta.claimed_by` 可选镜像字段
 
 - 日志：
-  - 插件/流程日志：`tasks/logs/opencode-plugin.log`
   - 任务执行日志：`tasks/logs/tasks/{id}.log`
+  - 默认不读取日志进上下文，除非用户明确要求排查/核对
 
 ---
 
@@ -43,11 +43,7 @@ AI 默认不得修改本文件内容；仅在用户明确授权时才允许修�
 - 回填 `tasks/items/{id}.md` 的 Result/Notes
 
 ### 2.1 对话输出（执行阶段）
-- 执行摘要：做了什么（1-3 条）
-- 结果状态：`done` / `blocked`
-- 验证方式：如何验证（或为何无法验证）
-- 关键变更：涉及的关键文件
-- 若阻塞：阻塞原因 + 需要用户提供的内容
+- 输出字段：执行摘要/结果状态/验证方式/关键变更/阻塞说明
 
 ---
 
@@ -90,17 +86,11 @@ AI 默认不得修改本文件内容；仅在用户明确授权时才允许修�
 
 ## 6. 验收底线（简版）
 
-- 行为符合需求（含关键边界）
-- 不引入新的 TypeScript / ESLint error
-- 任务文件补齐“如何验证”
+- 符合需求（含关键边界），不引入新的 TypeScript / ESLint error，任务文件补齐“如何验证”
 
 ---
 
 ## 7. 错误处理（最小版）
 
 - `error_type`: `TRANSIENT | PERMISSION | REQUIREMENT | ENVIRONMENT`
-- `TRANSIENT` → `blocked`，提示可手动重试
-- `PERMISSION` → `blocked`，说明需用户确认/授权
-- `REQUIREMENT` → 返回 Plan 阶段澄清
-- `ENVIRONMENT` → `blocked`，给出修复指引
-- 失败时在对话与任务日志记录 `error_type`、摘要与建议动作
+- 失败时：对话与任务日志记录 `error_type`、摘要与建议动作；按类型处理（TRANSIENT 重试、PERMISSION 确认、REQUIREMENT 回 Plan、ENVIRONMENT 修复）
