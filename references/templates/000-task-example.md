@@ -5,46 +5,42 @@
 
 ## Meta
 
-- id [必填]: 001-TASK
-- status [必填]: todo # todo | doing | blocked | done
-- priority [可选]: medium
-- module [可选]: node/main/xxx
-- claimed_by [可选]: ""
-- log_file [必填]: tasks/logs/tasks/001-TASK.log
+- id: 001-TASK
+- status: todo
+- priority: medium
+- module: node/main/xxx
+- claimed_by: ""
+- log_file: tasks/logs/tasks/001-TASK.log
 
 ## Description
 
-- 背景 [必填]: 简述现状/痛点
-- 目标 [必填]: 清晰可验证
-- 范围 [必填]: 本次会修改/影响的模块
-- 非范围 [可选]: 明确不做的内容
-- 约束/风险 [可选]: 版本、兼容性、性能、边界
+- 背景:
+- 目标:
+- 范围:
+- 非范围:
+- 约束/风险:
 
 ## Constraints
 
-- [可选] 关键约束（变更需记录原因）
+-
 
 ## Plan
 
-- [必填] 1) 改动的文件/模块/函数
-- [必填] 2) 边界与验证方式
+- [ ] 创建任务文档与日志占位
+- [ ] 在 todos 中登记任务
 
 ## Files
 
-- [可选] 可能涉及的目录范围（非硬约束）
-- path/to/dir-a/
-- path/to/dir-b/
+- path/to/dir/
 
 ## Acceptance
 
-- [必填] 不引入新的 TypeScript / ESLint error
-- [必填] 功能行为与需求一致（含正常与边界）
-- [可选] 关键路径具备测试覆盖
+-
 
 ## Notes
 
-- 2026-01-12: 任务创建，待确认。
+- 2026-02-05:
 
 ## Result
 
-- [必填] 完成/阻塞说明（做了什么、结论、如何验证、已知风险/下一步）
+-

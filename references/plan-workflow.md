@@ -25,6 +25,7 @@
 0) 若 `tasks/todos.json` 为空，提示用户选择起始序号（默认 001）
 1) 生成 `id`：取最大序号 +1（不足 3 位补零）+ `-<kebab-case>` 任务简写
 2) 创建 `tasks/items/{id}.md`（文件名规则：`tasks/items/{id}.md`，示例：`tasks/items/001-verify-task.md`；结构使用技能目录下的 `references/templates/000-task-example.md`，生成详细版本计划）
+   - 详细计划至少包含 Description/Plan/Acceptance；Files 为可选目录范围
 3) 创建 `tasks/logs/tasks/{id}.log`（结构使用技能目录下的 `references/templates/task-log-template.md`）
 4) 在 `tasks/todos.json` 中新增条目（`status: todo`，结构使用技能目录下的 `references/templates/todos-template.md`）
 4) 提示用户任务已落盘（含路径），可继续补充/调整

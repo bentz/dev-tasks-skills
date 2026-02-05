@@ -20,7 +20,8 @@ AI 默认不得修改本文件内容；仅在用户明确授权时才允许修�
     - `updated_at`
 
 - 任务文件：`tasks/items/{id}.md`
-  - 包含 Plan/Constraints/Files/Acceptance/Notes/Result
+  - 包含 Meta/Description/Constraints/Plan/Files/Acceptance/Notes/Result
+  - 字段约定：Description/Plan/Acceptance 必填；Files 为可选目录范围；其余按需填写
   - `Meta.status` 与 `tasks/todos.json` 镜像，仅用于反查
   - `Meta.claimed_by` 可选镜像字段
 
@@ -35,7 +36,7 @@ AI 默认不得修改本文件内容；仅在用户明确授权时才允许修�
 触发条件：指定任务 id/任务文件路径。
 
 前置条件（必须满足）：
-- 执行前必须读取 `tasks/items/{id}.md`，且至少包含 Plan / Acceptance；缺失则返回 Plan 阶段补齐，不得执行（Files 为可选）
+- 执行前必须读取 `tasks/items/{id}.md`，且至少包含 Description/Plan/Acceptance；缺失则返回 Plan 阶段补齐，不得执行（Files 为可选）
 
 执行原则：
 - 严格按 Plan / Acceptance 执行并记录日志；Files 仅作为目录范围参考，非硬约束
