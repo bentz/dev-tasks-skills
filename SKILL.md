@@ -32,3 +32,4 @@ MAY
 - Plan 阶段对话仅输出简化方案；详细计划仅在“创建/落盘/立项”等落盘后写入 `tasks/items/{id}.md`
 - Plan/执行的详细流程、输出契约与触发词见对应 workflow 文档
 - 用户明确只分析/建议时：不创建任务、不写 `tasks/`
+- 模板仅从技能目录 `references/templates/` 读取（如 `000-task-example.md`、`todos-template.md`、`task-log-template.md`），不从项目 `tasks/` 目录读取

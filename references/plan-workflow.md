@@ -22,9 +22,9 @@
 
 ## 3. 落盘（确认后）
 
-1) 创建 `tasks/items/{id}.md`（结构使用 `references/templates/000-task-example.md`，生成详细版本计划）
-2) 创建 `tasks/logs/tasks/{id}.log`
-3) 在 `tasks/todos.json` 中新增条目（`status: todo`）
+1) 创建 `tasks/items/{id}.md`（结构使用技能目录下的 `references/templates/000-task-example.md`，生成详细版本计划）
+2) 创建 `tasks/logs/tasks/{id}.log`（结构使用技能目录下的 `references/templates/task-log-template.md`）
+3) 在 `tasks/todos.json` 中新增条目（`status: todo`，结构使用技能目录下的 `references/templates/todos-template.md`）
 4) 提示用户任务已落盘（含路径），可继续补充/调整
 
 ---
