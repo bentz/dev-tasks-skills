@@ -7,7 +7,7 @@
 ## 1) 归档触发（默认阈值）
 
 满足任一条件即可归档：
-- `tasks/todos.json` 超过 **300 行** 或 **30 条任务**
+- `tasks/todos.json` 超过 **200 行** 或 **20 条任务**
 - `tasks/logs/tasks/` 中单个日志超过 **400 行**
 
 ---
@@ -29,7 +29,7 @@
 
 - 保留：
   - `status != done` 的任务（todo/doing/blocked）
-- 最近完成的少量任务（默认 20 条）
+- 最近完成的少量任务（默认 3 条）
 - 迁移：
 - 其余 `done` 任务移动到 `tasks/archive/todos/archive-{task_name}-todos-YYYYMM.json`
 
