@@ -3,39 +3,18 @@ name: dev-task
 description: 该技能用于指导复杂需求的开发流程，它帮助在多轮对话中澄清目标，在执行阶段组织任务与 todos
 ---
 
-## 重要
+## 核心规则
 
-- 永远使用中文进行对话
+- 永远使用中文进行对话。
+- 用户明确提到 `archive`/`归档` 时，按 `references/extensions/archiving.md` 与 `references/archive-policy.md` 执行归档流程。
+- 未指定任务 id 或任务文件路径时进入 Plan；指定后进入 Runner。
+- Plan 阶段未获用户确认前，不得落盘 `tasks/`。
+- 破坏性命令必须先征询用户确认。
 
-## 核心规则（MUST/SHOULD/MAY）
+## 读取策略
 
-MUST
-
-- 用户明确指明 `archive`/`归档` 等关键字 → 立即进入归档流程并执行归档（以 `references/extensions/archiving.md` 与 `references/archive-policy.md` 为准）
-- 未指定任务 id 或任务文件路径 → 进入 Plan 阶段；指定了则进入 执行阶段（Runner）
-- 进入plan阶段时，用户未确认前不得落盘 `tasks/`
-- 破坏性命令必须先征询用户确认
-
-
-SHOULD
-
-- 按需读取 references，默认不全量加载
-- 执行时记录关键命令与结论到任务日志
-- 变更范围优先遵循 `Files` 列表，超出需说明原因
-
-MAY
-
-- 触发并发或归档场景时加载扩展文档
-
-## 读取策略（节省 token）
-
-- Plan 阶段：读取 `references/plan-workflow.md`
-- 执行阶段：读取 `references/task-workflow.md`
-- 模板/策略/扩展：仅在需要时读取（并发/归档场景再读 `references/extensions/*.md`）
-
-## 阶段说明
-
-- Plan 阶段对话仅输出简化方案；详细计划仅在“创建/落盘/立项”等落盘后写入 `tasks/items/{id}.md`
-- Plan/执行的详细流程、输出契约与触发词见对应 workflow 文档
-- 用户明确只分析/建议时：不创建任务、不写 `tasks/`
-- 模板仅从技能目录 `references/templates/` 读取（如 `000-task-example.md`、`todos-template.md`、`task-log-template.md`），不从项目 `tasks/` 目录读取
+- 仅按需读取 references，不全量加载。
+- Plan 阶段读取 `references/plan-workflow.md`。
+- Runner 阶段读取 `references/task-workflow.md`。
+- 并发或归档场景再读取对应扩展文档。
+- 模板仅从技能目录 `references/templates/` 读取。
