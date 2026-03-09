@@ -21,7 +21,7 @@
 - 其余 done 任务移动到 `tasks/archive/todos/archive-{task_name}-todos-YYYYMM.json`。
 - 单个任务日志超过阈值时，将早期内容迁移到 `tasks/archive/logs/archive-{task_name}-{id}-YYYYMMDD.log`。
 - 当前任务日志默认保留最新 200 行。
-- 归档前必须征询用户确认；归档后更新 `tasks/todos.json` 的 `updated_at`。
+- 归档后更新 `tasks/todos.json` 的 `updated_at`。
 
 ## 4) 覆盖约定
 
